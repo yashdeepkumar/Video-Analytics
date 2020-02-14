@@ -1,4 +1,6 @@
 # Import packages
+c = 'person'
+d = 'hardhat'
 import os
 import cv2
 import numpy as np
@@ -28,9 +30,9 @@ PATH_TO_LABELS = os.path.join(CWD_PATH,'training','labelmap.pbtxt')
 # Number of classes the object detector can identify
 NUM_CLASSES = 3
 
-# Load the label map.
+## Load the label map.
 # Label maps map indices to category names, so that when our convolution
-# network predicts `3`, we know that this corresponds to `king`.
+# network predicts `5`, we know that this corresponds to `king`.
 # Here we use internal utility functions, but anything that returns a
 # dictionary mapping integers to appropriate string labels would be fine
 label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
@@ -68,8 +70,11 @@ num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
 # Initialize webcam feed
 video = cv2.VideoCapture(0)
-ret = video.set(3,1280)
-ret = video.set(4,720)
+#fps=video.set(cv2.CAP_PROP_FPS, 10)
+#ret = video.set(3,1280)
+#ret.set(CV_CAP_PROP_FRAME_WIDTH,640)
+#ret.set(CV_CAP_PROP_FRAME_HEIGHT,480)
+#ret = video.set(4,720)
 fps = video.get(cv2.CAP_PROP_FPS)
 print(fps)
 
@@ -79,11 +84,12 @@ while(True):
     # i.e. a single-column array, where each item in the column has the pixel RGB value
     ret, frame = video.read()
     frame_expanded = np.expand_dims(frame, axis=-0)
+    
 
     # Perform the actual detection by running the model with the image as input
     (boxes, scores, classes, num) = sess.run(
         [detection_boxes, detection_scores, detection_classes, num_detections],
-        feed_dict={image_tensor: frame_expanded})
+        feed_dict={image_tensor:frame_expanded})
 
     # Draw the results of the detection (aka 'visulaize the results')
     vis_util.visualize_boxes_and_labels_on_image_array(
@@ -93,15 +99,40 @@ while(True):
         np.squeeze(scores),
         category_index,
         use_normalized_coordinates=True,
-        line_thickness=8,
+        line_thickness=1,
         min_score_thresh=0.60)
+    #####################
+    final_score = np.squeeze(scores)
+    count = 0
+    for i in range(100):
+            if scores is None or final_score[i] > 0.5:
+                count = count + 1
+    a = count
+    printcount = 0;
+    for i in classes[0]:
+            printcount = printcount +1
+            b = category_index[i]['name']
+        
+            if(printcount == count):
+                break
+
+
+##################
+
+
+# All the results have been drawn on image. Now display the image.
+    cv2.imshow('Object detector', frame)
+    if b == c:
+        print("Person is entering into a restricted zone")
+    else:
+        print("Tested OK")
 
     # All the results have been drawn on the frame, so it's time to display it.
-    cv2.imshow('Object detector', frame)
+	
 
     # Press 'q' to quit
-    if cv2.waitKey(1) == ord('q'):
-        break
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break  
 
 # Clean up
 video.release()
